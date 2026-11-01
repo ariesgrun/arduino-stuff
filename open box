@@ -1,0 +1,58 @@
+
+// Ultra sensor: 5V, GND, TRIG = D7, ECHO= D8
+// servo: signal = D6, 5V, GND
+// goal use ultra sonic senosor to activate the servo motor (would be the opening mechansim of the capsule)
+#include <Servo.h>
+
+const int trigPin = 7;
+const int echoPin = 8;
+const int servoPin = 6;
+
+const int closedAngle = 0;
+const int openAngle = 70;
+const int triggerCm = 20;
+const int stepDelay = 20;   // higher = slower movement
+
+Servo flap;
+int angle = closedAngle;
+
+void setup() {
+  pinMode(trigPin, OUTPUT);
+  pinMode(echoPin, INPUT);
+  flap.attach(servoPin);
+  flap.write(closedAngle);
+}
+
+void loop() {
+  digitalWrite(trigPin, LOW);
+  delayMicroseconds(2);
+  digitalWrite(trigPin, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trigPin, LOW);
+
+  long duration = pulseIn(echoPin, HIGH, 30000);
+  long cm = duration / 58;
+
+  if (duration > 0 && cm < triggerCm) {
+    moveTo(openAngle);
+    delay(3000);   // stay open for 3 seconds
+  } else {
+    moveTo(closedAngle);
+  }
+
+  delay(100);
+}
+
+// Move the servo one degree at a time
+void moveTo(int target) {
+  flap.attach(servoPin);
+  flap.write(angle);        // start from where it already is, so it doesn't jerk
+  while (angle != target) {
+    if (angle < target) angle++;
+    else angle--;
+    flap.write(angle);
+    delay(stepDelay);
+  }
+  delay(200);               // let it settle
+  flap.detach();            // stop the signal so it stays quiet
+}
